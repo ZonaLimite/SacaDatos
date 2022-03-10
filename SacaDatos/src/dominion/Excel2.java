@@ -67,7 +67,7 @@ public class Excel2 {
 	public static Display2 display;
 	
 	/**
-	 * Importador de Datos Estadisticos Calma
+	 * Importador de Datos Estadisticos Calma Dominion
 	 */
 	static public void main(String[] args){
 		boolean bFaseImpCalma = false;
