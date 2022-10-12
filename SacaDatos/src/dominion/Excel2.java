@@ -48,10 +48,7 @@ public class Excel2 {
 	private final String sCarpetaBase="C:\\\\EspacioIntercambioDatos\\DatosEstadisticos\\";
 	private final String libroRutas = sCarpetaBase+"Rutas2.xls";//LA hoja que define las rutas de los informes
     private final String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion\\"; 
-	private final String USER_NAME = "mis";
-    private final String PASSWORD = "mismis";
-    private final String DOMINIO = "workgroup";
-    NtlmPasswordAuthentication auth = null;
+
     SmbFile sFile = null;
     SmbFileOutputStream sfos = null;
    
