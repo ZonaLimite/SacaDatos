@@ -30,8 +30,8 @@ public class DownloadSMBFile{
             File localFile = new File(slocalFile);
             in = new BufferedInputStream(new SmbFileInputStream(smbfile));
             out = new BufferedOutputStream(new FileOutputStream(localFile));
-            
-            out.write(in.readAllBytes());
+            byte[] bytesFile = new byte[(int) smbfile.length()];
+            out.write(in.read(bytesFile, 0, (int)smbfile.length() -1));
             out.flush();
             
             

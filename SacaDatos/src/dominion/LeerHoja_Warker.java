@@ -1,6 +1,7 @@
 package dominion;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.List;
 import java.util.StringTokenizer;
@@ -34,14 +35,14 @@ public class LeerHoja_Warker extends SwingWorker<String ,String>  {
 	@Override //
 	protected String doInBackground(){
 		// TODO Auto-generated method stub
-		 String sPathHoja = "smb:"+pathHoja;
+		 String sPathHoja = pathHoja;
 		 String valorRef="";
 		 StringTokenizer st = new StringTokenizer(ref, "-");
 
 			 		//publish(" Abriendo Hoja : "+ pathHoja);
 			 		Workbook libro=null;
 					try {
-						libro = Workbook.getWorkbook(new SmbFileInputStream(new SmbFile(sPathHoja)));
+						libro = Workbook.getWorkbook(new FileInputStream(new File(sPathHoja)));
 		                // Para obtener el libro .xls
 		                Sheet hoja1 = libro.getSheet(0);
 		                int indexIni = Integer.parseInt(st.nextToken());

@@ -1,9 +1,6 @@
 package dominion;
 
 
-import jxl.Workbook;
-
-import java.awt.HeadlessException;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -15,10 +12,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.MalformedURLException;
 import java.text.DateFormat;
 //import java.text.FieldPosition;
-
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -32,11 +27,15 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jcifs.smb.SmbException;
+import jcifs.config.BaseConfiguration;
+import jcifs.context.AbstractCIFSContext;
+import jcifs.context.BaseContext;
+import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileInputStream;
 import jcifs.smb.SmbFileOutputStream;
 import jxl.Sheet;
+import jxl.Workbook;
 //import jxl.Workbook;
 //import jxl.WorkbookSettings;
 //import jxl.read.biff.BiffException;
@@ -44,17 +43,18 @@ import jxl.write.WritableWorkbook;
 
 public class Excel2 {
 	//private final String libroRutas = "\\\\GMAO\\Datos\\Rutas2.xls";//LA hoja que define las rutas de los informes
-	
-
-
 	//private final String sCarpetaTrabajoCalma = "\\\\GMAO\\Datos\\Datos de Importacion\\"; 
-        //private final String sCarpetaBase="E:\\SacaDatos\\DatosEstadisticos\\";
-	private final String sCarpetaBase="//21.4.1.2/Intercambio/DatosEstadisticos/";
+    //private final String sCarpetaBase="E:\\\\SacaDatos\\DatosEstadisticos\\";
+	private final String sCarpetaBase="C:\\\\EspacioIntercambioDatos\\DatosEstadisticos\\";
 	private final String libroRutas = sCarpetaBase+"Rutas2.xls";//LA hoja que define las rutas de los informes
-    private final String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion/"; 
-	private final String carpetaDeTrabajoXLS = sCarpetaBase + DameCarpetaFecha(fechaTrabajo) + "/Excel/";
-	private final String carpetaDeTrabajoHTML = sCarpetaBase+ DameCarpetaFecha(fechaTrabajo) + "/";
-	
+    private final String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion\\"; 
+	private final String USER_NAME = "mis";
+    private final String PASSWORD = "mismis";
+    private final String DOMINIO = "workgroup";
+    NtlmPasswordAuthentication auth = null;
+    SmbFile sFile = null;
+    SmbFileOutputStream sfos = null;
+   
 	//private final String libroRutas = "c:\\put\\RutasStandby.xls";
 	private static JLabel Warning ;
 	private static JTextArea out;
@@ -162,7 +162,7 @@ public class Excel2 {
 	
 	public boolean VerificaFecha(Date fechaTrabajo,String rutaInforme, String nombreInforme, String refFecha, String especial){
 		boolean verificada = false;
-	    String fechaIrregParte1 = "Intervalo de tiempo pedido (en dï¿½as postales) :  entre el ";
+	    String fechaIrregParte1 = "Intervalo de tiempo pedido (en días postales) :  entre el ";
 	    String fechaIrregParte2 = " y el  ";
 	    String fechaIrregParte3 = " (no incluso)";
 	    String fechaComp;
@@ -288,12 +288,11 @@ public class Excel2 {
 	public boolean FaseImpCalma (Date fechaTrabajo){
 		boolean ComoHaido = false;
 		String sPathNameFile, sNameFile, sCeldaVerif ,sNombreCompletoAntes, sNombreCompletoDespues, sEsFechaEspecial;
-		//String sCarpetaTrabajoCalma = "c:\\Put\\put2\\";
-		String sPathHoja = "smb:"+this.libroRutas;
-		SmbFileInputStream smbfis=null ;
+		String sPathHoja =this.libroRutas;
+		FileInputStream smbfis=null ;
 		try{
-			smbfis = new SmbFileInputStream(new SmbFile(sPathHoja));
-			Workbook libro = Workbook.getWorkbook(new SmbFileInputStream(new SmbFile(sPathHoja)));
+			smbfis = new FileInputStream(new File(sPathHoja));
+			Workbook libro = Workbook.getWorkbook(new FileInputStream(new File(sPathHoja)));
 			 Sheet hoja1 = libro.getSheet(0);
 			 //recorre la plantilla rutas 2 con los parametros
 			 for(int i=1;i<5;i++ ){
@@ -301,7 +300,7 @@ public class Excel2 {
 				 sNameFile = (hoja1.getCell(8,i)).getContents();
 				 sCeldaVerif = (hoja1.getCell(1,i)).getContents();
 				 sNombreCompletoAntes = sPathNameFile + sNameFile;
-				 sNombreCompletoDespues = sCarpetaTrabajoCalma + FechaAyerTipo3(fechaTrabajo)+"_"+sNameFile; 
+				 sNombreCompletoDespues = sCarpetaTrabajoCalma+ pegaRaizCentro() + FechaAyerTipo3(fechaTrabajo)+"_"+sNameFile; 
 				 sEsFechaEspecial = (hoja1.getCell(0,i)).getContents();
 				
 				 //System.out.println(sNombreCompletoDespues);
@@ -309,8 +308,9 @@ public class Excel2 {
 			
 			     if(myExcel.VerificaFecha(fechaTrabajo, sPathNameFile, sNameFile, sCeldaVerif, sEsFechaEspecial) == true){
 			                
-			                //ComoHaido=myExcel.CopyFile(sNombreCompletoAntes, sNombreCompletoDespues);
-			                ComoHaido=myExcel.downloadFile(sNombreCompletoAntes, sNombreCompletoDespues);
+			                ComoHaido=myExcel.CopyFile(sNombreCompletoAntes, sNombreCompletoDespues, fechaTrabajo);
+			    	 
+			                //ComoHaido=myExcel.downloadFile(sNombreCompletoAntes, sNombreCompletoDespues, fechaTrabajo);
 			     }
 			 }
 			 libro.close();
@@ -328,6 +328,18 @@ public class Excel2 {
 		}
 		return  ComoHaido;
 	}
+	
+	
+	/**
+	 * Selecciona en la hoja Rutas el valor de la raiz asignado a este centro
+	 * Se ha indicado posicion Columna 12, fila 1
+	 * @return String la raiz a añadir
+	 */
+	private String pegaRaizCentro() {
+		return myExcel.LeerHoja(libroRutas,"12-1");
+	}
+
+
 	public boolean FaseHTML(Date fechaTrabajo){
 	/*
 	' Obtencion de los ficheros HTML para envio EMAIL
@@ -338,7 +350,7 @@ public class Excel2 {
 	*/
 		
 	    Boolean ComoHaIdoFaseHTML=false;
-
+	    final String carpetaDeTrabajoHTML = sCarpetaBase+ DameCarpetaFecha(fechaTrabajo) + "\\";
 	    //carpetaDeTrabajoHTML = "c:\\put\\put2\\";
 	     for(int x = 6; x <= 8; x++){
 	        String sRange = String.valueOf(x);
@@ -353,8 +365,8 @@ public class Excel2 {
 	        
 	        //MsgBox (nombreCompletoAntes)
 	        if( matchDate(nombreCompletoAntes, fechaTrabajo) == true){
-	        	//myExcel.CopyFile(nombreCompletoAntes, nombreCompletoDespues);
-	        	myExcel.downloadFile(nombreCompletoAntes, nombreCompletoDespues);
+	        	myExcel.CopyFile(nombreCompletoAntes, nombreCompletoDespues, fechaTrabajo);
+	        	//myExcel.downloadFile(nombreCompletoAntes, nombreCompletoDespues, fechaTrabajo);
 	        	ComoHaIdoFaseHTML= true;
 	        	out.append("Verificada fecha de :"+ nombreFicheroInforme+"\n");
 	        }else{
@@ -370,7 +382,7 @@ public class Excel2 {
 public boolean FaseXLS(Date fechaTrabajo){
 
 	boolean ComoHaIdoFaseXLS = false;
-
+	final String carpetaDeTrabajoXLS = sCarpetaBase + DameCarpetaFecha(fechaTrabajo) + "\\Excel\\";
 
 	/*' Obtencion de los ficheros XLS para Mantenimiento
 	' 1 Se verifica la fecha en el contenido del fichero excel
@@ -398,7 +410,7 @@ public boolean FaseXLS(Date fechaTrabajo){
 	        Warning.setText("Tratando Informe " + nombreCompletoAntes);
 
 	        if(myExcel.VerificaFecha(fechaTrabajo, rutaFicheroInforme, nombreFicheroInforme, celdaVerif, esEspecial) == true){
-		          ComoHaIdoFaseXLS= myExcel.downloadFile(nombreCompletoAntes, nombreCompletoDespues);
+		          ComoHaIdoFaseXLS= myExcel.CopyFile(nombreCompletoAntes, nombreCompletoDespues, fechaTrabajo);
 		           
 	        }else{
 	        
@@ -417,12 +429,13 @@ public boolean matchDate(String ficheroHTML, Date fechaTrabajo){
 		String fechaIrregParte2 = " y el  ";
 		String fechaIrregParte3 = " (no incluso)";
 		String cadenaComp = fechaIrregParte1 + myExcel.FechaAyerTipo1(fechaTrabajo)+ fechaIrregParte2 + myExcel.FechaHoyTipo1(fechaTrabajo) + fechaIrregParte3;
-		String sHTMLSMB = "smb:"+ficheroHTML;
-		//String cadenaComp = myExcel.FechaAyerTipo1(fechaTrabajo);
+	    //String cadenaComp = myExcel.FechaAyerTipo1(fechaTrabajo);
 		try{
-			SmbFile f = new SmbFile(sHTMLSMB);
+			BaseContext acc = new BaseContext(new BaseConfiguration(true));
+			File f = new File(ficheroHTML);
+			
 
-			SmbFileInputStream fis = new SmbFileInputStream(f);
+			FileInputStream fis = new FileInputStream(f);
 			BufferedReader d  = new BufferedReader(new InputStreamReader(fis));
 			StringBuffer sb = new StringBuffer();
 			char[] caracteres = new char[(int) f.length()]; 
@@ -466,22 +479,19 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 	boolean bRight = false;
 	//Se trata de verificar en la ruta de trabajo correspondiente, si exixten las carpetas previstas.
 	//1 Fase : checkear si existe el host + recurso compartido 
-	String pathFileFecha = "smb:"+sCarpetaBase+ this.DameCarpetaFecha(fechaRef);
-	String pathDirFechaExcel ="smb:"+ sCarpetaBase+ this.DameCarpetaFecha(fechaRef) + "/Excel";
-    String pathDirImportacion = "smb:"+sCarpetaBase+"DatosImportacion";
-	SmbFile host = null;
-	SmbFile hostImportacion = null;
-	SmbFile hostFecha = null;
-	SmbFile hostFechaExcel=null;
-	try {
-		host = new SmbFile("smb:"+sCarpetaBase);
-		hostImportacion = new SmbFile(pathDirImportacion);
-		hostFecha = new SmbFile(pathFileFecha);
-		hostFechaExcel = new SmbFile(pathDirFechaExcel);
-	} catch (MalformedURLException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	}
+	String pathFileFecha = sCarpetaBase+ this.DameCarpetaFecha(fechaRef);
+	String pathDirFechaExcel = sCarpetaBase+ this.DameCarpetaFecha(fechaRef) + "\\Excel";
+    String pathDirImportacion = sCarpetaBase+"DatosImportacion";
+	File host = null;
+	File hostImportacion = null;
+	File hostFecha = null;
+	File hostFechaExcel=null;
+	
+		host = new File(sCarpetaBase);
+		hostImportacion = new File(pathDirImportacion);
+		hostFecha = new File(pathFileFecha);
+		hostFechaExcel = new File(pathDirFechaExcel);
+	
   
 	try {
 		if(host.exists()){
@@ -490,7 +500,7 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 			
 			out.append("Es necesario crear el recurso compartido :\n" + sCarpetaBase + "\n" );
 		}
-	} catch (SmbException e1) {
+	} catch (Exception e1) {
 		// TODO Auto-generated catch block
 		e1.printStackTrace();
 	}
@@ -513,18 +523,14 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 			System.out.println(Integer.valueOf(result));
 
 		}
-	} catch (SmbException e1) {
+	} catch (Exception e1) {
 		// TODO Auto-generated catch block
 		e1.printStackTrace();
-	} catch (HeadlessException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	}        
-        
+	}
 	try {
 		if(hostFecha.exists()){
 		}else{//del hostFecha
-			int result = JOptionPane.showConfirmDialog(null, "No existe la carpeta : " + pathFileFecha + "\n Desea crearla?");
+			int result = JOptionPane.showConfirmDialog(null, "No existe la carpeta del Mes: " + pathFileFecha + "\n Desea crearla?");
 			if(result==0){
 				try{
 					hostFecha.mkdir();
@@ -535,10 +541,7 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 			}
 			System.out.println(Integer.valueOf(result));
 		}
-	} catch (SmbException e1) {
-		// TODO Auto-generated catch block
-		e1.printStackTrace();
-	} catch (HeadlessException e1) {
+	} catch (Exception e1) {
 		// TODO Auto-generated catch block
 		e1.printStackTrace();
 	}
@@ -558,10 +561,7 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 			System.out.println(Integer.valueOf(result));
 
 		}
-	} catch (SmbException e) {
-		// TODO Auto-generated catch block
-		e.printStackTrace();
-	} catch (HeadlessException e) {
+	} catch (Exception e) {
 		// TODO Auto-generated catch block
 		e.printStackTrace();
 	}
@@ -569,10 +569,10 @@ public boolean CreaCarpetasdeTrabajo(Date fechaRef){
 	
 	return bRight;
 }
-public boolean CopyFile (String source, String dest){
+public boolean CopyFile (String source, String dest, Date fechaEnUso){
 		boolean Vabien = true;
                 //Comprobacion carpetas de trabajo
-                this.CreaCarpetasdeTrabajo(fechaTrabajo);
+                this.CreaCarpetasdeTrabajo(fechaEnUso);
 		
 		try{
 			File sourceFile = new File(source);
@@ -607,22 +607,23 @@ public boolean CopyFile (String source, String dest){
 		return Vabien;
 	}
 
-public boolean downloadFile(String sRemoteFile, String slocalFile)  {
+public boolean downloadFile(String sRemoteFile, String slocalFile, Date fechaEnUso)  {
     boolean Vabien = true;
     //verificacion existencia estructura de trabajo
-    this.CreaCarpetasdeTrabajo(fechaTrabajo);
+    this.CreaCarpetasdeTrabajo(fechaEnUso);
     InputStream inStream = null;
     OutputStream outStream = null;
     try {
         String sNameRemote = "smb:"+sRemoteFile;
-        String sNameLocal = "smb:"+slocalFile;
+        String sNameLocal = slocalFile;
         jcifs.Config.registerSmbURLHandler();
-		SmbFile smbRemotefile = new SmbFile(sNameRemote);
-		SmbFile smbLocalFile = new SmbFile(sNameLocal);
+        BaseContext acc = new BaseContext(new BaseConfiguration(true));
+		SmbFile smbRemotefile = new SmbFile(sNameRemote, (acc.withCredentials(myExcel.auth)));
+		File localFile = new File(sNameLocal);
         inStream = new BufferedInputStream(new SmbFileInputStream(smbRemotefile));
-        outStream = new BufferedOutputStream(new SmbFileOutputStream(smbLocalFile));
-        
-        outStream.write(inStream.readAllBytes());
+        outStream = new BufferedOutputStream(new FileOutputStream(localFile));
+        byte[] bytesFile = new byte[(int) smbRemotefile.length()];
+        outStream.write(inStream.read(bytesFile, 0, (int)smbRemotefile.length() -1));
         outStream.flush();
         
         
@@ -630,7 +631,7 @@ public boolean downloadFile(String sRemoteFile, String slocalFile)  {
 		//System.out.println("Falla copy :");
 		//File fTemp = new File();
 		e.printStackTrace();
-		out.append("Excepcion (CopyFile) :" +  e.getMessage()+ "\n");
+		out.append("Excepcion (DownloadFile) :" +  e.getMessage()+ "\n");
 		if(e.getMessage().contains("El sistema no puede encontrar la ruta especificada")==true){
 			this.CreaCarpetasdeTrabajo(fechaTrabajo);
 			//this.downloadFile(sRemoteFile, slocalFile);
