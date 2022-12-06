@@ -10,18 +10,21 @@ import java.io.BufferedReader;
 import java.io.File;
 //import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 //import java.text.FieldPosition;
 
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 import java.util.logging.Level;
 //import java.util.Locale;
 import java.util.logging.Logger;
@@ -31,6 +34,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
+
 
 import jcifs.smb.SmbException;
 import jcifs.smb.SmbFile;
@@ -49,7 +53,8 @@ public class Excel2 {
 
 	//private final String sCarpetaTrabajoCalma = "\\\\GMAO\\Datos\\Datos de Importacion\\"; 
         //private final String sCarpetaBase="E:\\SacaDatos\\DatosEstadisticos\\";
-	private final String sCarpetaBase="//21.4.1.2/Intercambio/DatosEstadisticos/";
+	//private final String sCarpetaBase="//21.4.1.2/Intercambio/DatosEstadisticos/";
+	private static String sCarpetaBase = null;
 	private final String libroRutas = sCarpetaBase+"Rutas2.xls";//LA hoja que define las rutas de los informes
     private final String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion/"; 
 	private final String carpetaDeTrabajoXLS = sCarpetaBase + DameCarpetaFecha(fechaTrabajo) + "/Excel/";
@@ -66,6 +71,8 @@ public class Excel2 {
 	public static Date fechaTrabajo;
 	public static Display2 display;
 	
+	private Properties p; 
+	
 	/**
 	 * Importador de Datos Estadisticos Calma Dominion
 	 */
@@ -73,6 +80,24 @@ public class Excel2 {
 		boolean bFaseImpCalma = false;
 		boolean bFaseHTML = false;
 		boolean bFaseExcel = false;
+		//Obtener las properties SacaDatos.ini, deben estar junto al fichero ejecutable jar de la app
+		String ruta,fichero;
+		URL url = Excel2.class.getClassLoader().getResource(".");
+		ruta = new File(url.getPath()).getAbsolutePath();
+		fichero=ruta+"/SacaDatos.ini";
+		Properties  p= new Properties();
+		try {
+			p.load(new FileInputStream(new File(fichero)));
+			sCarpetaBase = (String)p.get("sCarpetaBase");
+		} catch (FileNotFoundException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		
+			
 		String miFechadeTrabajo="";
 		df = DateFormat.getInstance();
 		fechaTrabajo= new Date();
@@ -301,7 +326,7 @@ public class Excel2 {
 				 sNameFile = (hoja1.getCell(8,i)).getContents();
 				 sCeldaVerif = (hoja1.getCell(1,i)).getContents();
 				 sNombreCompletoAntes = sPathNameFile + sNameFile;
-				 sNombreCompletoDespues = sCarpetaTrabajoCalma + FechaAyerTipo3(fechaTrabajo)+"_"+sNameFile; 
+				 sNombreCompletoDespues = sCarpetaTrabajoCalma + "MAD_"+ FechaAyerTipo3(fechaTrabajo)+"_"+sNameFile; 
 				 sEsFechaEspecial = (hoja1.getCell(0,i)).getContents();
 				
 				 //System.out.println(sNombreCompletoDespues);
@@ -315,7 +340,7 @@ public class Excel2 {
 			 }
 			 libro.close();
 		}catch(Exception e){
-			System.out.println("Fase Importacion Calma");
+			System.out.println("Excepcion:Fase Importacion Calma " + e.getMessage());
 			e.printStackTrace();
 		}finally {
 			try {
@@ -619,10 +644,11 @@ public boolean downloadFile(String sRemoteFile, String slocalFile)  {
         jcifs.Config.registerSmbURLHandler();
 		SmbFile smbRemotefile = new SmbFile(sNameRemote);
 		SmbFile smbLocalFile = new SmbFile(sNameLocal);
+		byte[] bytesFile = new byte[(int) smbRemotefile.length()];
         inStream = new BufferedInputStream(new SmbFileInputStream(smbRemotefile));
         outStream = new BufferedOutputStream(new SmbFileOutputStream(smbLocalFile));
-        
-        outStream.write(inStream.readAllBytes());
+        inStream.read(bytesFile,0,(int)smbRemotefile.length());
+        outStream.write(bytesFile);
         outStream.flush();
         
         

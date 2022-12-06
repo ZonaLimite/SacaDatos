@@ -15,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import jcifs.smb.SmbFile;
 import jcifs.smb.SmbFileInputStream;
+import jcifs.smb.SmbFileOutputStream;
 
 public class DownloadSMBFile{
 /**
@@ -30,8 +31,10 @@ public class DownloadSMBFile{
             File localFile = new File(slocalFile);
             in = new BufferedInputStream(new SmbFileInputStream(smbfile));
             out = new BufferedOutputStream(new FileOutputStream(localFile));
-            
-            out.write(in.readAllBytes());
+            byte[] bytesFile = new byte[(int) smbfile.length()];
+          
+            in.read(bytesFile,0,(int)smbfile.length());
+            out.write(bytesFile);
             out.flush();
             
             
