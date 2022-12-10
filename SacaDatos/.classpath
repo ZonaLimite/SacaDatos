@@ -7,10 +7,9 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="miglayout15-swing.jar" sourcepath="miglayout-src.zip"/>
-	<classpathentry kind="lib" path="E:/SacaDatos/jexcel/jxl.jar"/>
-	<classpathentry kind="lib" path="E:/SacaDatos/bcprov-jdk15on-1.69.jar"/>
-	<classpathentry kind="lib" path="E:/SacaDatos/jcifs-ng-2.1.7.jar"/>
-	<classpathentry kind="lib" path="E:/SacaDatos/slf4j-api-1.7.32.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/jcifs-ng"/>
+	<classpathentry kind="lib" path="/home/tecnico/Descargas/Temp/Libs/bcprov-jdk15on-1.69.jar"/>
+	<classpathentry kind="lib" path="/home/tecnico/Descargas/Temp/Libs/slf4j-api-1.7.32.jar"/>
+	<classpathentry kind="lib" path="/home/tecnico/Descargas/Temp/Libs/jxl.jar"/>
+	<classpathentry kind="lib" path="/home/tecnico/Intercambio/key_store/jsch-0.1.55.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

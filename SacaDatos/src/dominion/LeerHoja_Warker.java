@@ -10,8 +10,7 @@ import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import javax.swing.SwingWorker;
 
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileInputStream;
+
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;

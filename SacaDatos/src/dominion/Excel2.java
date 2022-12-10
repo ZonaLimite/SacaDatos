@@ -7,16 +7,19 @@ import java.io.BufferedReader;
 import java.io.File;
 //import java.io.IOException;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.URL;
 import java.text.DateFormat;
 //import java.text.FieldPosition;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Properties;
 import java.util.logging.Level;
 //import java.util.Locale;
 import java.util.logging.Logger;
@@ -27,13 +30,6 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import jcifs.config.BaseConfiguration;
-import jcifs.context.AbstractCIFSContext;
-import jcifs.context.BaseContext;
-import jcifs.smb.NtlmPasswordAuthentication;
-import jcifs.smb.SmbFile;
-import jcifs.smb.SmbFileInputStream;
-import jcifs.smb.SmbFileOutputStream;
 import jxl.Sheet;
 import jxl.Workbook;
 //import jxl.Workbook;
@@ -45,12 +41,12 @@ public class Excel2 {
 	//private final String libroRutas = "\\\\GMAO\\Datos\\Rutas2.xls";//LA hoja que define las rutas de los informes
 	//private final String sCarpetaTrabajoCalma = "\\\\GMAO\\Datos\\Datos de Importacion\\"; 
     //private final String sCarpetaBase="E:\\\\SacaDatos\\DatosEstadisticos\\";
-	private final String sCarpetaBase="C:\\\\EspacioIntercambioDatos\\DatosEstadisticos\\";
-	private final String libroRutas = sCarpetaBase+"Rutas2.xls";//LA hoja que define las rutas de los informes
-    private final String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion\\"; 
+	private String sCarpetaBase;
+	private String libroRutas;//LA hoja que define las rutas de los informes
+    private String sCarpetaTrabajoCalma = sCarpetaBase+"DatosImportacion\\"; 
 
-    SmbFile sFile = null;
-    SmbFileOutputStream sfos = null;
+    File sFile = null;
+    FileOutputStream sfos = null;
    
 	//private final String libroRutas = "c:\\put\\RutasStandby.xls";
 	private static JLabel Warning ;
@@ -62,11 +58,13 @@ public class Excel2 {
 	public static DateFormat df; 
 	public static Date fechaTrabajo;
 	public static Display2 display;
+	private static Properties p ;
 	
 	/**
 	 * Importador de Datos Estadisticos Calma Dominion
 	 */
 	static public void main(String[] args){
+		
 		boolean bFaseImpCalma = false;
 		boolean bFaseHTML = false;
 		boolean bFaseExcel = false;
@@ -93,6 +91,21 @@ public class Excel2 {
 				}
 				
 				myExcel = new Excel2();
+				String UriBase = myExcel.getClass().getClassLoader().getResource(".").getPath();
+				p = new Properties();
+				try {
+					p.load(new FileInputStream(new File(UriBase+"SacaDatos.ini")));
+				} catch (FileNotFoundException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				} catch (IOException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				myExcel.sCarpetaBase = (String)p.get("sCarpetaBase");
+				myExcel.libroRutas = myExcel.sCarpetaBase+"Rutas2.xls";//LA hoja que define las rutas de los informes
+				myExcel.sCarpetaTrabajoCalma = myExcel.sCarpetaBase+"DatosImportacion\\"; 
+				
 				display = new Display2();
 				display.setVisible(true);
 
@@ -159,7 +172,7 @@ public class Excel2 {
 	
 	public boolean VerificaFecha(Date fechaTrabajo,String rutaInforme, String nombreInforme, String refFecha, String especial){
 		boolean verificada = false;
-	    String fechaIrregParte1 = "Intervalo de tiempo pedido (en días postales) :  entre el ";
+	    String fechaIrregParte1 = "Intervalo de tiempo pedido (en dï¿½as postales) :  entre el ";
 	    String fechaIrregParte2 = " y el  ";
 	    String fechaIrregParte3 = " (no incluso)";
 	    String fechaComp;
@@ -286,9 +299,9 @@ public class Excel2 {
 		boolean ComoHaido = false;
 		String sPathNameFile, sNameFile, sCeldaVerif ,sNombreCompletoAntes, sNombreCompletoDespues, sEsFechaEspecial;
 		String sPathHoja =this.libroRutas;
-		FileInputStream smbfis=null ;
+		FileInputStream fis=null ;
 		try{
-			smbfis = new FileInputStream(new File(sPathHoja));
+			fis = new FileInputStream(new File(sPathHoja));
 			Workbook libro = Workbook.getWorkbook(new FileInputStream(new File(sPathHoja)));
 			 Sheet hoja1 = libro.getSheet(0);
 			 //recorre la plantilla rutas 2 con los parametros
@@ -316,7 +329,7 @@ public class Excel2 {
 			e.printStackTrace();
 		}finally {
 			try {
-				smbfis.close();
+				fis.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -330,7 +343,7 @@ public class Excel2 {
 	/**
 	 * Selecciona en la hoja Rutas el valor de la raiz asignado a este centro
 	 * Se ha indicado posicion Columna 12, fila 1
-	 * @return String la raiz a añadir
+	 * @return String la raiz a aï¿½adir
 	 */
 	private String pegaRaizCentro() {
 		return myExcel.LeerHoja(libroRutas,"12-1");
@@ -428,7 +441,7 @@ public boolean matchDate(String ficheroHTML, Date fechaTrabajo){
 		String cadenaComp = fechaIrregParte1 + myExcel.FechaAyerTipo1(fechaTrabajo)+ fechaIrregParte2 + myExcel.FechaHoyTipo1(fechaTrabajo) + fechaIrregParte3;
 	    //String cadenaComp = myExcel.FechaAyerTipo1(fechaTrabajo);
 		try{
-			BaseContext acc = new BaseContext(new BaseConfiguration(true));
+			
 			File f = new File(ficheroHTML);
 			
 
@@ -611,13 +624,13 @@ public boolean downloadFile(String sRemoteFile, String slocalFile, Date fechaEnU
     InputStream inStream = null;
     OutputStream outStream = null;
     try {
-        String sNameRemote = "smb:"+sRemoteFile;
+        String sNameRemote = sRemoteFile;
         String sNameLocal = slocalFile;
-        jcifs.Config.registerSmbURLHandler();
-        BaseContext acc = new BaseContext(new BaseConfiguration(true));
-		SmbFile smbRemotefile = new SmbFile(sNameRemote, (acc.withCredentials(myExcel.auth)));
+       
+       
+		File smbRemotefile = new File(sNameRemote);
 		File localFile = new File(sNameLocal);
-        inStream = new BufferedInputStream(new SmbFileInputStream(smbRemotefile));
+        inStream = new BufferedInputStream(new FileInputStream(smbRemotefile));
         outStream = new BufferedOutputStream(new FileOutputStream(localFile));
         byte[] bytesFile = new byte[(int) smbRemotefile.length()];
         outStream.write(inStream.read(bytesFile, 0, (int)smbRemotefile.length() -1));
